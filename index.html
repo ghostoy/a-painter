@@ -2,18 +2,41 @@
 <html>
 <head>
 	<meta charset="UTF-8">
-	<title>&lt;my-element&gt;</title>
+	<title>&lt;a-painter&gt;</title>
 
 	<!-- Importing Web Component's Polyfill -->
 	<script src="//cdnjs.cloudflare.com/ajax/libs/polymer/0.0.20130816/polymer.min.js"></script>
 
 	<!-- Importing Custom Elements -->
-	<link rel="import" href="src/my-element.html">
+	<link rel="import" href="src/a-painter.html">
 </head>
 <body>
 
 	<!-- Using Custom Elements -->
-	<my-element></my-element>
+	<a-painter width="500" height="500" style="border: 1px solid black;"></a-painter>
+	<form>
+		<label>Tools</label>
+		<input type="radio" name="tool" id="Pen" checked/><label for="Pen">Pen</label>
+		<input type="radio" name="tool" id="Eraser"/><label for="Eraser">Eraser</label>
+		<a href="###" id="export" download="export.png">Export as image</a>
+	</form>
+	<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		var painter = document.querySelector('a-painter');
+		var tools = document.querySelectorAll('input[name=tool]');
+		for(var i = 0; i < tools.length; i++) {
+			tools[i].addEventListener('change', function(e) {
+				console.log('tool changed: ' + e.srcElement.id);
+				painter.tool = new painter.Tools[e.srcElement.id]();
+			}, false);
+		}
+
+		var exportBtn = document.getElementById('export');
+		exportBtn.addEventListener('click', function() {
+			exportBtn.href = painter.export('image/png');
+		}, false);
+	});
+	</script>
 
 </body>
 </html>

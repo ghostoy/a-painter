@@ -1,0 +1,133 @@
+<polymer-element name="a-painter"
+		 attributes="width height">
+
+	<template>
+		<style>
+		@host {
+			:scope {
+				display: block;
+			}
+		}
+		</style>
+		<canvas id="painter" touch-action="none" width="{{width}}" height="{{height}}"></canvas>
+	</template>
+
+	<script>
+		var Pen = function(opt) {
+			for(var p in opt) {
+				if (opt.hasOwnPerperty(p))
+					this[p] = opt[p];
+			}
+		};
+		Pen.prototype = {
+			get type(){return 'Pen';},
+			cursor: 'crosshair',
+			color: 'black',
+			width: 20,
+			paint: function(ctx, pointer) {
+				var width = this.width;
+				var halfWidth = width / 2;
+				ctx.save();
+				ctx.fillStyle = this.color;
+				for(var i = 0; i < pointer.length; i++) {
+					var p = pointer[i];
+					ctx.fillRect(p[0]-halfWidth, p[1]-halfWidth, width, width);
+				}
+				ctx.restore();
+			}
+		};
+
+		var Eraser = function(opt) {
+			for(var p in opt) {
+				if (opt.hasOwnPerperty(p))
+					this[p] = opt[p];
+			}
+		};
+		Eraser.prototype = {
+			get type(){return 'Eraser';},
+			cursor: 'default',
+			width: 20,
+			paint: function(ctx, pointer) {
+				var width = this.width;
+				var halfWidth = width / 2;
+				ctx.save();
+				ctx.globalCompositeOperation = 'destination-out';	// erase
+				ctx.fillStyle = this.color;
+				for(var i = 0; i < pointer.length; i++) {
+					var p = pointer[i];
+					ctx.fillRect(p[0]-halfWidth, p[1]-halfWidth, width, width);
+				}
+				ctx.restore();
+			}
+		};
+
+		Polymer('a-painter', {
+			width: 200,
+			height: 150,
+
+			tool: new Pen(),
+			Tools: {'Pen': Pen, 'Eraser': Eraser},
+
+			toolChanged: function() {
+				this.$.painter.style.cursor = this.tool.cursor || 'crosshair';
+			},
+
+			export: function(mime) {
+				return this.$.painter.toDataURL(mime);
+			},
+
+			ready: function() {
+				var raf = window.requestAnimationFrame
+						|| window.webkitRequestAnimationFrame
+						|| window.mozRequestAnimationFrame
+						|| window.msRequestAnimationFrame
+						|| window.oRequestAnimationFrame
+						|| function( callback ){
+								window.setTimeout(callback, 1000 / 60);
+							};
+				var painter = this.$.painter;
+				var ctx = painter.getContext('2d');	// Painter context
+				var pointers = {};					// Pointers pressed
+				var that = this;
+
+				var pointerdown = function(e) {
+					pointers[e.pointerId] = [getPosition(e)];
+				};
+				var pointermove = function(e) {
+					var pointer = pointers[e.pointerId];
+					if (pointer) {
+						pointer.push(getPosition(e));
+					}
+				};
+				var pointerup = function(e) {
+					delete pointers[e.pointerId];
+				};
+				var eventLoop = function() {
+					for(var pointerId in pointers) {
+						var pointer = pointers[pointerId];
+						that.tool.paint(ctx, pointer);
+						pointers[pointerId] = [];//[pointer[pointer.length - 1]];
+					}
+					raf(eventLoop);
+				};
+				var getPosition = function(e) {
+					return [e.x - painter.offsetLeft, e.y - painter.offsetTop];
+				}
+
+				this.style.width = this.width + 'px';
+				this.style.height = this.height + 'px';
+				painter.style.cursor = this.tool.cursor || 'crosshair';
+
+				painter.addEventListener('pointerdown', pointerdown, false);
+				painter.addEventListener('pointermove', pointermove, false);
+				painter.addEventListener('pointerup', pointerup, false);
+				painter.addEventListener('pointercancel', pointerup, false);
+				// painter.addEventListener('pointerout', pointerup, false);
+
+				// start event loop
+				eventLoop();
+			}
+		});
+	</script>
+
+</polymer-element>
