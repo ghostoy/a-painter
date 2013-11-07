@@ -1,6 +1,6 @@
 # &lt;a-painter&gt;
 
-TODO: Write a project description
+A painter component based on Polymer which saves your idea in a second.
 
 > Maintained by [Cong Liu](https://github.com/ghostoy).
 
